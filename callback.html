@@ -10,43 +10,43 @@
             padding: 40px;
             text-align: center;
         }
-        .code-box {
-            background: #1a1a1a;
-            padding: 20px;
-            margin: 20px auto;
-            max-width: 600px;
-            border-radius: 8px;
-            word-break: break-all;
+        .status {
+            font-size: 18px;
+            margin: 20px;
         }
-        button {
-            background: #22c55e;
-            color: #000;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 4px;
-            margin-top: 20px;
-        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
     </style>
 </head>
 <body>
-    <h1>Authorization Code</h1>
-    <p>Copy this code:</p>
-    <div class="code-box" id="code"></div>
-    <button onclick="copyCode()">Copy Code</button>
-    <p style="margin-top: 40px; color: #666;">
-        Paste this code into your terminal when prompted
-    </p>
+    <h1>ScreenStrike Authorization</h1>
+    <div id="status" class="status">Processing authorization...</div>
     
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        document.getElementById('code').textContent = code || 'No code received';
         
-        function copyCode() {
-            navigator.clipboard.writeText(code);
-            alert('Code copied!');
+        if (!code) {
+            document.getElementById('status').innerHTML = '<span class="error">❌ No authorization code received</span>';
+        } else {
+            // Automatically exchange code
+            fetch('http://localhost:5001/api/auth/exchange-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('status').innerHTML = '<span class="success">✅ Authentication successful! You can close this window.</span>';
+                    setTimeout(() => window.close(), 2000);
+                } else {
+                    document.getElementById('status').innerHTML = `<span class="error">❌ ${data.error}</span><br><small>${data.details || ''}</small>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('status').innerHTML = `<span class="error">❌ Connection failed. Make sure backend is running.</span>`;
+            });
         }
     </script>
 </body>
